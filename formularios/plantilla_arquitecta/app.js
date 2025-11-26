@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', function () {
   const generateBtn = document.getElementById('generateBtn');
+  const downloadPdfBtn = document.getElementById('downloadPdfBtn');
   const form = document.getElementById('portfolioForm');
   const statusEl = document.getElementById('status');
   const addProjectBtn = document.getElementById('addProjectBtn');
@@ -8,6 +9,8 @@ document.addEventListener('DOMContentLoaded', function () {
   const addExperienceBtn = document.getElementById('addExperienceBtn');
   const experiencesContainer = document.getElementById('experiencesContainer');
   const experienceTemplate = document.getElementById('experienceTemplate');
+  const addReferenceBtn = document.getElementById('addReferenceBtn');
+  const referencesContainer = document.getElementById('referencesContainer');
   const attachmentsPreview = document.getElementById('attachmentsPreview');
   const fileCount = document.getElementById('fileCount');
   const fotoInput = document.querySelector('input[name="foto"]');
@@ -20,6 +23,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB per file
   const MAX_TOTAL_SIZE = 120 * 1024 * 1024; // 120MB total
   const MAX_FILE_COUNT = 60;
+  const MAX_FILES_PER_PROJECT = 8;
 
   function showStatus(msg){
     if(!statusEl) return;
@@ -122,7 +126,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // update previews when files change
     const filesInput = card.querySelector('input[name="project_files"]');
-    filesInput.addEventListener('change', updateProjectPreviews);
+    filesInput.addEventListener('change', function(){
+      // Validar límite de 8 archivos
+      if(this.files.length > MAX_FILES_PER_PROJECT){
+        alert(`Solo puedes subir máximo ${MAX_FILES_PER_PROJECT} archivos por proyecto.`);
+        this.value = '';
+        updateProjectPreviews();
+        return;
+      }
+      updateProjectPreviews();
+    });
 
     projectsContainer.appendChild(card);
     // update previews/count
@@ -175,6 +188,113 @@ document.addEventListener('DOMContentLoaded', function () {
   // Añadir primera experiencia por defecto
   if (addExperienceBtn) addExperienceBtn.addEventListener('click', ()=> addExperience());
   addExperience();
+
+  // Funciones para referencias dinámicas
+  function addReference(){
+    const refItem = document.createElement('div');
+    refItem.className = 'reference-item';
+    refItem.innerHTML = `
+      <label>URL de referencia (opcional)<input type="url" name="reference_url" placeholder="https://ejemplo.com"></label>
+      <label>Comentarios sobre esta referencia<textarea name="reference_comment" placeholder="¿Qué te gusta de esta referencia?"></textarea></label>
+      <button type="button" class="removeReferenceBtn btn-secondary" style="background:#ef4444;padding:6px 10px;margin-top:8px">Eliminar</button>
+    `;
+    const removeBtn = refItem.querySelector('.removeReferenceBtn');
+    removeBtn.addEventListener('click', ()=> refItem.remove());
+    referencesContainer.appendChild(refItem);
+  }
+  if(addReferenceBtn) addReferenceBtn.addEventListener('click', addReference);
+
+  // Validar objetivos del portafolio (máximo 3)
+  const objetivoCheckboxes = document.querySelectorAll('input[name="objetivo_portafolio"]');
+  objetivoCheckboxes.forEach(cb => {
+    cb.addEventListener('change', function(){
+      const checked = document.querySelectorAll('input[name="objetivo_portafolio"]:checked');
+      if(checked.length > 3){
+        this.checked = false;
+        alert('Solo puedes seleccionar hasta 3 objetivos principales.');
+      }
+    });
+  });
+
+  // Establecer fecha actual por defecto en firma
+  const firmaFechaInput = document.querySelector('input[name="firma_fecha"]');
+  if(firmaFechaInput && !firmaFechaInput.value){
+    const today = new Date().toISOString().split('T')[0];
+    firmaFechaInput.value = today;
+  }
+
+  // Función para descargar PDF resumen
+  if(downloadPdfBtn){
+    downloadPdfBtn.addEventListener('click', async function(){
+      try{
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        let y = 20;
+        const lineHeight = 7;
+        const pageHeight = doc.internal.pageSize.height;
+        
+        function addText(text, isBold = false){
+          if(y > pageHeight - 20){
+            doc.addPage();
+            y = 20;
+          }
+          if(isBold){
+            doc.setFont(undefined, 'bold');
+          } else {
+            doc.setFont(undefined, 'normal');
+          }
+          doc.text(text, 10, y);
+          y += lineHeight;
+        }
+
+        const formData = new FormData(form);
+        
+        addText('RESUMEN DEL FORMULARIO - PORTAFOLIO ARQUITECTA', true);
+        y += 3;
+        addText(`Generado: ${new Date().toLocaleDateString()}`, false);
+        y += 5;
+        
+        addText('1. IDENTIDAD PROFESIONAL', true);
+        addText(`Nombre: ${formData.get('nombre') || 'N/A'}`);
+        addText(`Cargo: ${formData.get('cargo') || 'N/A'}`);
+        y += 3;
+        
+        addText('2. PÚBLICO OBJETIVO', true);
+        addText(`Público objetivo: ${formData.get('publico_objetivo') || 'N/A'}`);
+        const objetivos = Array.from(document.querySelectorAll('input[name="objetivo_portafolio"]:checked')).map(cb => cb.value).join(', ');
+        addText(`Objetivos: ${objetivos || 'N/A'}`);
+        addText(`Formato de entrega: ${formData.get('formato_entrega') || 'N/A'}`);
+        y += 3;
+        
+        addText('3. EXPERIENCIAS', true);
+        const expCards = experiencesContainer.querySelectorAll('.experience-card');
+        addText(`Total de experiencias: ${expCards.length}`);
+        y += 3;
+        
+        addText('4. PROYECTOS', true);
+        const projCards = projectsContainer.querySelectorAll('.project-card');
+        addText(`Total de proyectos: ${projCards.length}`);
+        y += 3;
+        
+        addText('5. COMUNICACIÓN', true);
+        addText(`Método preferido: ${formData.get('comunicacion_metodo') || 'N/A'}`);
+        addText(`Horario: ${formData.get('horario_contacto') || 'N/A'}`);
+        y += 3;
+        
+        addText('6. CONSENTIMIENTO', true);
+        addText(`Firmado por: ${formData.get('firma_nombre') || 'N/A'}`);
+        addText(`Fecha: ${formData.get('firma_fecha') || 'N/A'}`);
+        
+        doc.save(`${formData.get('nombre') || 'resumen'}_portafolio_resumen.pdf`);
+        showStatus('PDF descargado correctamente.');
+        setTimeout(hideStatus, 3000);
+      }catch(err){
+        console.error(err);
+        alert('Error al generar PDF: ' + err.message);
+      }
+    });
+  }
 
   function showModal(summaryHtml){
     if(!confirmModal) return Promise.resolve(true);
@@ -269,6 +389,13 @@ document.addEventListener('DOMContentLoaded', function () {
         `**Certificaciones:** ${formData.get('certificaciones') || ''}\n`
       );
 
+      md += mdSection('3.5. Público Objetivo y Metas',
+        `**Público objetivo:** ${formData.get('publico_objetivo') || ''}\n`+
+        `**Objetivos del portafolio:** ${Array.from(document.querySelectorAll('input[name="objetivo_portafolio"]:checked')).map(cb => cb.value).join(', ')}\n`+
+        `**Resultados esperados:** ${formData.get('resultados_esperados') || ''}\n`+
+        `**Formato de entrega:** ${formData.get('formato_entrega') || ''}\n`
+      );
+
       // 4. Experiencia Profesional: construir a partir de tarjetas dinámicas
       const experienceCards = experiencesContainer.querySelectorAll('.experience-card');
       let experienciasContent = '';
@@ -332,6 +459,31 @@ document.addEventListener('DOMContentLoaded', function () {
         `**Disponibilidad:** ${formData.get('disponibilidad') || ''}\n`+
         `**Contacto:** ${formData.get('contacto') || ''}\n`+
         `**Preferencias de diseño:** ${formData.get('preferencias_diseno') || ''}\n`
+      );
+
+      // 10. Referencias
+      const refItems = referencesContainer.querySelectorAll('.reference-item');
+      let refContent = '';
+      refItems.forEach((item, idx) => {
+        const url = item.querySelector('input[name="reference_url"]')?.value || '';
+        const comment = item.querySelector('textarea[name="reference_comment"]')?.value || '';
+        if(url || comment){
+          refContent += `### Referencia ${idx+1}\n`;
+          if(url) refContent += `**URL:** ${url}\n`;
+          if(comment) refContent += `**Comentario:** ${comment}\n\n`;
+        }
+      });
+      md += mdSection('10. Referencias e Inspiración', refContent || 'No se registraron referencias.');
+
+      md += mdSection('11. Preferencias de Comunicación',
+        `**Método preferido:** ${formData.get('comunicacion_metodo') || ''}\n`+
+        `**Horario de contacto:** ${formData.get('horario_contacto') || ''}\n`
+      );
+
+      md += mdSection('12. Consentimiento y Firma',
+        `**Nombre:** ${formData.get('firma_nombre') || ''}\n`+
+        `**Fecha:** ${formData.get('firma_fecha') || ''}\n`+
+        `**Consentimiento otorgado:** ${formData.get('consentimiento') ? 'Sí' : 'No'}\n`
       );
 
       md += `---\nGenerado desde el formulario web.`;

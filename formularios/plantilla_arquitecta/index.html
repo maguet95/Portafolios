@@ -9,6 +9,8 @@
   <!-- JSZip & FileSaver via CDN -->
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  <!-- jsPDF para generar resumen -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -62,6 +64,40 @@
       </section>
 
       <section>
+        <h2>3.5. Público Objetivo y Metas del Portafolio</h2>
+        <div class="form-grid">
+          <label class="full">Público objetivo / cliente ideal *<textarea name="publico_objetivo" required placeholder="Ej. Estudios de arquitectura residencial, promotores inmobiliarios de lujo, clientes internacionales."></textarea>
+            <small class="helper-text">Describe a quién deseas atraer con tu portafolio.</small>
+          </label>
+          
+          <fieldset class="full">
+            <legend>Objetivos del portafolio (selecciona hasta 3) *</legend>
+            <small class="helper-text">Selecciona hasta 3 objetivos principales.</small>
+            <div class="checkbox-group">
+              <label class="checkbox-label"><input type="checkbox" name="objetivo_portafolio" value="Conseguir clientes"> Conseguir clientes</label>
+              <label class="checkbox-label"><input type="checkbox" name="objetivo_portafolio" value="Obtener empleos"> Obtener empleos o colaboraciones</label>
+              <label class="checkbox-label"><input type="checkbox" name="objetivo_portafolio" value="Proyectos emblemáticos"> Mostrar proyectos emblemáticos</label>
+              <label class="checkbox-label"><input type="checkbox" name="objetivo_portafolio" value="Visibilidad online"> Aumentar visibilidad online</label>
+              <label class="checkbox-label"><input type="checkbox" name="objetivo_portafolio" value="Postular concursos"> Postular a concursos</label>
+            </div>
+          </fieldset>
+
+          <label class="full">Resultados esperados (opcional)<textarea name="resultados_esperados" placeholder="Ej. Obtener 3 nuevos clientes en 6 meses."></textarea>
+            <small class="helper-text">Describe un resultado tangible que esperas lograr.</small>
+          </label>
+
+          <label>Formato de entrega preferido *<select name="formato_entrega" required>
+              <option value="">Selecciona...</option>
+              <option value="PDF">PDF</option>
+              <option value="Web">Web</option>
+              <option value="Presentación">Presentación</option>
+              <option value="Impreso">Impreso</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section>
         <h2>4. Experiencia Profesional</h2>
         <p>Agrega cada experiencia laboral de forma individual. Puedes añadir tantas como necesites.</p>
 
@@ -100,9 +136,15 @@
       <section>
         <h2>5. Habilidades y Herramientas Técnicas</h2>
         <div class="form-grid">
-          <label class="full">Software (indica nivel)<textarea name="software" placeholder="AutoCAD: Avanzado; Revit: Intermedio"></textarea></label>
-          <label>Habilidades técnicas<textarea name="habilidades_tecnicas" placeholder="Modelado 3D, renders, dirección de obra..."></textarea></label>
-          <label>Soft skills<textarea name="soft_skills" placeholder="Liderazgo, comunicación..."></textarea></label>
+          <label class="full">Software (indica nivel)<textarea name="software" placeholder="AutoCAD: Avanzado; Revit: Intermedio; SketchUp: Básico"></textarea>
+            <small class="helper-text">Indica el software que dominas y tu nivel de experiencia.</small>
+          </label>
+          <label>Habilidades técnicas<textarea name="habilidades_tecnicas" placeholder="Modelado 3D, renders, dirección de obra, diseño paramétrico..."></textarea>
+            <small class="helper-text">Lista tus capacidades técnicas más relevantes.</small>
+          </label>
+          <label>Soft skills<textarea name="soft_skills" placeholder="Liderazgo, comunicación, trabajo en equipo, gestión de proyectos..."></textarea>
+            <small class="helper-text">Describe tus habilidades interpersonales y de gestión.</small>
+          </label>
         </div>
       </section>
 
@@ -144,7 +186,9 @@
             <label>Software y herramientas<input name="project_software" type="text" placeholder="Revit, AutoCAD, Rhino..."></label>
             <label>Créditos y colaboradores<textarea name="project_credits" rows="2" placeholder="Equipo, colaboradores, fotografías"></textarea></label>
 
-            <label>Adjuntar archivos del proyecto (imágenes, planos, PDF)<input name="project_files" type="file" multiple accept="image/*,.pdf,.zip"></label>
+            <label>Adjuntar archivos del proyecto (imágenes, planos, PDF)<input name="project_files" type="file" multiple accept="image/*,.pdf,.zip">
+              <small class="helper-text">Puedes subir imágenes, planos y PDFs. Máximo 8 archivos por proyecto.</small>
+            </label>
           </div>
         </template>
 
@@ -173,7 +217,19 @@
       </section>
 
       <section>
-        <h2>9. Elementos Extras</h2>
+        <h2>9. Referencias o Inspiración</h2>
+        <p>Comparte ejemplos de portafolios, sitios web o referencias visuales que te inspiren.</p>
+        <div id="referencesContainer" class="references-container">
+          <div class="reference-item">
+            <label>URL de referencia (opcional)<input type="url" name="reference_url" placeholder="https://ejemplo.com"></label>
+            <label>Comentarios sobre esta referencia<textarea name="reference_comment" placeholder="¿Qué te gusta de esta referencia?"></textarea></label>
+          </div>
+        </div>
+        <button type="button" id="addReferenceBtn" class="btn-secondary">+ Añadir otra referencia</button>
+      </section>
+
+      <section>
+        <h2>10. Elementos Extras</h2>
         <div class="form-grid">
           <label class="full">Redes profesionales y perfiles<textarea name="redes" placeholder="LinkedIn, Instagram, Behance, web"></textarea></label>
           <label>Logo personal (adjuntar)<input name="logo" type="file" accept="image/*,.svg"></label>
@@ -185,7 +241,39 @@
         </div>
       </section>
 
+      <section>
+        <h2>11. Preferencias de Comunicación</h2>
+        <div class="form-grid">
+          <fieldset class="full">
+            <legend>Método de comunicación preferido *</legend>
+            <div class="radio-group">
+              <label class="radio-label"><input type="radio" name="comunicacion_metodo" value="Email" required checked> Email</label>
+              <label class="radio-label"><input type="radio" name="comunicacion_metodo" value="Llamada" required> Llamada</label>
+              <label class="radio-label"><input type="radio" name="comunicacion_metodo" value="Videollamada" required> Videollamada</label>
+            </div>
+          </fieldset>
+
+          <label class="full">Mejor horario para contactar<input type="text" name="horario_contacto" placeholder="Ej. Lun–Vie 9:00–12:00 (UTC–5)">
+            <small class="helper-text">Indica tu disponibilidad horaria preferida.</small>
+          </label>
+        </div>
+      </section>
+
+      <section>
+        <h2>12. Consentimiento y Firma</h2>
+        <div class="form-grid">
+          <label class="full checkbox-label consent-checkbox">
+            <input type="checkbox" name="consentimiento" required>
+            Autorizo el uso del material proporcionado para la creación del portafolio y confirmo que tengo derechos sobre todo el contenido enviado. *
+          </label>
+
+          <label>Nombre para firma *<input type="text" name="firma_nombre" required placeholder="Tu nombre completo"></label>
+          <label>Fecha *<input type="date" name="firma_fecha" required></label>
+        </div>
+      </section>
+
       <div class="actions">
+        <button type="button" id="downloadPdfBtn" class="btn-secondary">📄 Descargar resumen PDF</button>
         <button type="button" id="generateBtn">Generar y descargar ZIP</button>
         <button type="reset">Limpiar</button>
       </div>
